@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from io import BytesIO
 import re
+from datetime import datetime
 
 def map_market_to_region(market, territories_dict):
     """Maps each market to the right region by looping through the territories dictionary."""
@@ -234,19 +235,25 @@ territory_mapping = {
 if __name__ == "__main__":
     st.title("Excel Data Processor")
 
-    # Step 1: File Upload for Excel
-    uploaded_excel = st.file_uploader("Upload your Excel file (.xlsx or .xlsm)", type=["xlsx", "xlsm"])
+    uploaded_excel = st.file_uploader("Upload the latest raw data (Media/Creative)", type=["xlsx", "xlsm"])
+    uploaded_excel2 = st.file_uploader("Upload the latest Data Mastersheet", type=["xlsx", "xlsm"])
+    if uploaded_excel is not None:
 
-    # URL for the agency match Excel file stored in GitHub
+        file_name = uploaded_excel.name
+        st.write("Uploaded file name:", file_name)
+        
+        if 'Media' in file_name:
+            file_type = 'Media'
+        else:
+            file_type = 'Creative'
+    
     github_xlsx_url = st.text_input("Enter GitHub Excel file URL", 
                                     "https://raw.githubusercontent.com/gabrielllj/matchagency/master/agency_match.xlsx")
     github_xlsx_url2 = st.text_input("Enter GitHub Excel file URL", 
-                                    "https://raw.githubusercontent.com/gabrielllj/matchagency/master/company_brand.xlsx")
+                                    "https://raw.githubusercontent.com/gabrielllj/r3automation/master/company_brand.xlsx")
     if uploaded_excel:
-        # Read the uploaded Excel file
-        data = pd.read_excel(uploaded_excel, sheet_name='Media Wins', header=7)
-        data = data[data['ConfidentialY/N'] == 'N']
-        # Attempt to load agency matches from GitHub URL
+        data = pd.read_excel(uploaded_excel, sheet_name= file_type + ' Wins', header=7)
+        master_sheet = pd.read_excel(uploaded_excel2, sheet_name= 'Main - NEW FORMULAS')
         try:
             
             response = requests.get(github_xlsx_url)
@@ -259,6 +266,11 @@ if __name__ == "__main__":
             # Process the data
             
             data.columns = data.columns.str.replace(r'\s+', ' ', regex=True).str.replace(' ', '')
+            if file_type == 'Creative':
+                data = data[data['YY/N'] == 'N']
+            elif file_type == 'Media':
+                data = data[data['ConfidentialY/N'] == 'N']
+            
             data['Client'] = data['Client'].str.strip()
             data['Agency'] = data['Agency'].str.strip()
             data['Agency'] = data['Agency'].str.title()
@@ -275,7 +287,6 @@ if __name__ == "__main__":
                 left_on='Client', 
                 right_on='OLD BRAND NAME'
             )
-            # data = data.rename(columns={'Match': 'Incumbent MATCH'}).drop(columns=['Agency Description'])
             
             data = data.merge(
                 agency_matches[['Agency Description', 'Match']], 
@@ -308,28 +319,40 @@ if __name__ == "__main__":
             data['Market'] = data['Market'].apply(clean_territory)
             data['Market'] = data['Market'].replace(territory_mapping)
             
-            data['Region2'] = data['Market'].apply(lambda x: map_market_to_region(x, territories))
+            data['Region'] = data['Market'].apply(lambda x: map_market_to_region(x, territories))
 
-            data['Est Billings'] = data['Billings(US$k)'].apply(lambda x: "USD${:,.0f}".format(x))
-            data = data.drop('Region', axis=1)
-            data['Month'] = pd.to_datetime(data['Month'] + ' 2024', format='%b %Y').dt.strftime('%d/%m/%Y')
+            data['Est Billings'] = data['Billings(US$k)'].apply(lambda x: "USD${:,.0f}".format(x * 1_000))
+            data['Month'] = "Sep"
+            data['Month'] = pd.to_datetime(data['Month'] + ' 2024', format='%b %Y')
+            data['Month'] = data['Month'].dt.strftime('%m/%d/%Y 00:00:00')
             data['OLD BRAND NAME'] = data['Client']
 
             
             master = data[['Month', 'OLD BRAND NAME', 'Company', 'Brand', 'Status', 'Assignment', 
-                        'Type of Assignment', 'Territory', 'Region2', 'Current Agency MATCH', 
+                        'Type of Assignment', 'Territory', 'Region', 'Current Agency MATCH', 
                         'Current Agency Description', 'Incumbent MATCH', 'Incumbent Agency Description', 
                         'Category_y', 'Est Billings']]
+            master['Month'] = pd.to_datetime(master['Month'])
+            master = master.rename(columns={'Category_y': 'Categories Updated', 'Month':'Date', 'Incumbent Agency Description': 'Incumbant Agency Description'})
             
-            master = master.rename(columns={'Region2': 'Region', 'Category_y': 'Category'})
-
+            current_date = datetime.now()
+            formatted_date = current_date.strftime('%m.%d.%y')
+            file_name = f"{formatted_date} Assignments_Master Sheet.xlsx"
+            
             st.write("Processed Master Data", master)
-
+            
+            last_filled_row = master_sheet.shape[0] 
+            
+            st.write("Last filled row in master_sheet:", last_filled_row)
+            combined_data = pd.concat([master_sheet, master], ignore_index=True)
+            
+            st.write("Combined Data:", combined_data)
+            
             @st.cache_data
-            def convert_df(df):
+            def convert_df(data):
                 output = BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df.to_excel(writer, index=False, sheet_name='Master Data')
+                    data.to_excel(writer, index=False, sheet_name='Master Data')
                     writer.close()
                 output.seek(0)
                 return output.getvalue()
@@ -337,8 +360,8 @@ if __name__ == "__main__":
             # Download button for the processed data
             st.download_button(
                 label="Download Master Data as Excel",
-                data=convert_df(master),
-                file_name="master_data.xlsx",
+                data=convert_df(combined_data),
+                file_name=file_name,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
