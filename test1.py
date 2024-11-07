@@ -211,8 +211,26 @@ if __name__ == "__main__":
         data['Assignment'] = 'Media'
         data['Territory'] = data['Market']
         data['Region2'] = data['Market'].apply(lambda x: map_market_to_region(x, territories))
-        data['Current Agency MATCH'] = None
         data['Current Agency Description'] = data['Agency']
+        
+        if github_xlsx_url:
+            try:
+                # Read the GitHub Excel file
+                agency_matches = pd.read_excel(github_xlsx_url)
+                
+                # Assuming the Excel has a column named 'Agency Description' for matching
+                if 'Agency Description' in agency_matches.columns:
+                    data = data.merge(
+                        agency_matches[['Agency Description', 'Match']], 
+                        how='left', 
+                        left_on='Current Agency Description', 
+                        right_on='Agency Description'
+                    )
+                    data = data.rename(columns={'Match': 'Current Agency MATCH'}).drop(columns=['Agency Description'])
+                else:
+                    st.error("The uploaded Excel file does not contain 'Agency Description' column.")
+            except Exception as e:
+                st.error(f"Error loading Excel from GitHub: {e}")
         
         # Placeholder columns for future use
         data['Incumbent MATCH'] = 'Fill out later'
@@ -238,13 +256,6 @@ if __name__ == "__main__":
                 
                 # Assuming the Excel has a column named 'Agency Description' for matching
                 if 'Agency Description' in agency_matches.columns:
-                    # # Perform matching using the DataFrame
-                    # def match_agency(agency):
-                    #     match_row = agency_matches[agency_matches['Agency Description'].str.lower() == agency.lower()]
-                    #     return match_row['Match'].values[0] if not match_row.empty else agency  # return agency if no match found
-                    
-                    # data['Current Agency MATCH'] = data['Agency'].apply(match_agency)
-                    
                     data = data.merge(
                         agency_matches[['Agency Description', 'Match']], 
                         how='left', 
