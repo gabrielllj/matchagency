@@ -211,6 +211,7 @@ if __name__ == "__main__":
         data['Assignment'] = 'Media'
         data['Territory'] = data['Market']
         data['Region2'] = data['Market'].apply(lambda x: map_market_to_region(x, territories))
+        data['Current Agency MATCH'] = None
         data['Current Agency Description'] = data['Agency']
         
         # Placeholder columns for future use
