@@ -245,7 +245,7 @@ if __name__ == "__main__":
     if uploaded_excel:
         # Read the uploaded Excel file
         data = pd.read_excel(uploaded_excel, sheet_name='Media Wins', header=7)
-
+        data = data[data['ConfidentialY/N'] == 'N']
         # Attempt to load agency matches from GitHub URL
         try:
             
@@ -291,9 +291,6 @@ if __name__ == "__main__":
             agency_matches['Agency Description'] = agency_matches['Agency Description'].str.strip()
             agency_matches['Agency Description'] = agency_matches['Agency Description'].str.title()
             
-            # data['Incumbent Agency Description'] = data['Incumbent Agency Description'].str.strip()
-            # data['Incumbent Agency Description'] = data['Incumbent Agency Description'].str.title()
-            # Merge with agency matches data
             data = data.merge(
                 agency_matches[['Agency Description', 'Match']], 
                 how='left', 
@@ -301,15 +298,7 @@ if __name__ == "__main__":
                 right_on='Agency Description'
             )
             data = data.rename(columns={'Match': 'Current Agency MATCH'}).drop(columns=['Agency Description'])
-            
-            # data = data.merge(
-            #     agency_matches[['Agency Description', 'Match']], 
-            #     how='left', 
-            #     left_on='Incumbent Agency Description', 
-            #     right_on='Agency Description'
-            # )
-            # data = data.rename(columns={'Match': 'Incumbent MATCH'}).drop(columns=['Agency Description'])
-            
+    
             data['Assignment'] = 'Media'
             data['Territory'] = data['Market']
             
@@ -321,13 +310,10 @@ if __name__ == "__main__":
             
             data['Region2'] = data['Market'].apply(lambda x: map_market_to_region(x, territories))
 
-            # data['Categories Updated'] = data['Category']
             data['Est Billings'] = data['Billings(US$k)'].apply(lambda x: "USD${:,.0f}".format(x))
             data = data.drop('Region', axis=1)
             data['Month'] = pd.to_datetime(data['Month'] + ' 2024', format='%b %Y').dt.strftime('%d/%m/%Y')
             data['OLD BRAND NAME'] = data['Client']
-            # data['Company'] = 'Fill out later'
-            # data['Brand'] = 'Fill out later'
 
             
             master = data[['Month', 'OLD BRAND NAME', 'Company', 'Brand', 'Status', 'Assignment', 
@@ -336,10 +322,9 @@ if __name__ == "__main__":
                         'Category_y', 'Est Billings']]
             
             master = master.rename(columns={'Region2': 'Region', 'Category_y': 'Category'})
-            # Display processed data
+
             st.write("Processed Master Data", master)
 
-            # Function to convert DataFrame to Excel
             @st.cache_data
             def convert_df(df):
                 output = BytesIO()
