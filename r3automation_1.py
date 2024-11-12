@@ -254,19 +254,23 @@ if __name__ == "__main__":
                                     "https://raw.githubusercontent.com/gabrielllj/r3automation/master/company_brand.xlsx")
     if uploaded_excel:
         data = pd.read_excel(uploaded_excel, sheet_name= file_type + ' Wins', header=7)
-        master_sheet = pd.read_excel(uploaded_excel2, sheet_name= 'Main - NEW FORMULAS')
+        excel_file = pd.ExcelFile(uploaded_excel2)
+        if len(excel_file.sheet_names) > 1:
+            master_sheet = pd.read_excel(uploaded_excel2, sheet_name='Main - NEW FORMULAS')
+        else:
+            master_sheet = pd.read_excel(uploaded_excel2)
+
         master_sheet['Date'] = pd.to_datetime(master_sheet['Date'])
         master_sheet['Date'] = master_sheet['Date'].dt.strftime('%d/%m/%Y')
         try:
             
             response = requests.get(github_xlsx_url)
             response2 = requests.get(github_xlsx_url2)
-            response.raise_for_status()  # Raise error for bad status codes
+            response.raise_for_status()
             response2.raise_for_status()
             agency_matches = pd.read_excel(BytesIO(response.content))
             company_brand = pd.read_excel(BytesIO(response2.content))
             
-            # Process the data
             
             data.columns = data.columns.str.replace(r'\s+', ' ', regex=True).str.replace(' ', '')
             if file_type == 'Creative':
