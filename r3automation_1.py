@@ -238,8 +238,8 @@ if __name__ == "__main__":
 
     uploaded_excel = st.file_uploader("Upload the latest raw data (Media/Creative)", type=["xlsx", "xlsm"])
     uploaded_excel2 = st.file_uploader("Upload the latest Data Mastersheet", type=["xlsx", "xlsm"])
+    
     if uploaded_excel is not None:
-
         file_name = uploaded_excel.name
         st.write("Uploaded file name:", file_name)
         
@@ -260,7 +260,7 @@ if __name__ == "__main__":
         else:
             master_sheet = pd.read_excel(uploaded_excel2)
 
-        master_sheet['Date'] = pd.to_datetime(master_sheet['Date'])
+        master_sheet['Date'] = pd.to_datetime(master_sheet['Date'], dayfirst=True, errors='coerce')
         master_sheet['Date'] = master_sheet['Date'].dt.strftime('%d/%m/%Y')
         try:
             
