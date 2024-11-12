@@ -1,4 +1,5 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
 import requests
 from io import BytesIO
@@ -254,6 +255,8 @@ if __name__ == "__main__":
     if uploaded_excel:
         data = pd.read_excel(uploaded_excel, sheet_name= file_type + ' Wins', header=7)
         master_sheet = pd.read_excel(uploaded_excel2, sheet_name= 'Main - NEW FORMULAS')
+        master_sheet['Date'] = pd.to_datetime(master_sheet['Date'])
+        master_sheet['Date'] = master_sheet['Date'].dt.strftime('%d/%m/%Y')
         try:
             
             response = requests.get(github_xlsx_url)
@@ -277,7 +280,7 @@ if __name__ == "__main__":
             data['Status'] = 'Awarded'
             data['Market'] = data['Market'].astype(str)
             data['Remark'] = data['Remark'].astype(str)
-            data['Type of Assignment'] = 'AOR/Project - ' + data['Remark']
+            data['Type of Assignment'] = np.where(data['Remark'].notna(), 'AOR/Project - ' + data['Remark'], 'AOR/Project')
             data['Current Agency Description'] = data['Agency']
             data['Incumbent Agency Description'] = data['Incumbent']
             
@@ -324,7 +327,7 @@ if __name__ == "__main__":
             data['Est Billings'] = data['Billings(US$k)'].apply(lambda x: "USD${:,.0f}".format(x * 1_000))
             data['Month'] = "Sep"
             data['Month'] = pd.to_datetime(data['Month'] + ' 2024', format='%b %Y')
-            data['Month'] = data['Month'].dt.strftime('%m/%d/%Y 00:00:00')
+            data['Month'] = data['Month'].dt.strftime('%d/%m/%Y')
             data['OLD BRAND NAME'] = data['Client']
 
             
@@ -332,8 +335,13 @@ if __name__ == "__main__":
                         'Type of Assignment', 'Territory', 'Region', 'Current Agency MATCH', 
                         'Current Agency Description', 'Incumbent MATCH', 'Incumbent Agency Description', 
                         'Category_y', 'Est Billings']]
-            master['Month'] = pd.to_datetime(master['Month'])
+            
+            
+            
             master = master.rename(columns={'Category_y': 'Categories Updated', 'Month':'Date', 'Incumbent Agency Description': 'Incumbant Agency Description'})
+            
+            master['Date'] = pd.to_datetime(master['Date'])
+            master['Date'] = master['Date'].dt.strftime('%d/%m/%Y')
             
             current_date = datetime.now()
             formatted_date = current_date.strftime('%m.%d.%y')
@@ -357,7 +365,6 @@ if __name__ == "__main__":
                 output.seek(0)
                 return output.getvalue()
 
-            # Download button for the processed data
             st.download_button(
                 label="Download Master Data as Excel",
                 data=convert_df(combined_data),
