@@ -286,6 +286,7 @@ if __name__ == "__main__":
             data['Remark'] = data['Remark'].astype(str)
             data['Type of Assignment'] = np.where(data['Remark'].isna(), 'AOR/Project',
                                                     'AOR/Project - ' + data['Remark'])
+            data['Type of Assignment'] = data['Type of Assignment'].replace('AOR/Project - nan', 'AOR/Project')
             data['Current Agency Description'] = data['Agency']
             data['Incumbent Agency Description'] = data['Incumbent']
             
