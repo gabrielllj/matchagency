@@ -234,7 +234,7 @@ territory_mapping = {
 
 
 if __name__ == "__main__":
-    st.title("Excel Data Processor")
+    st.title("Adbrands heehehe")
 
     uploaded_excel = st.file_uploader("Upload the latest raw data (Media/Creative)", type=["xlsx", "xlsm"])
     uploaded_excel2 = st.file_uploader("Upload the latest Data Mastersheet", type=["xlsx", "xlsm"])
