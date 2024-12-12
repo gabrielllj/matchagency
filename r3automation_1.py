@@ -248,10 +248,23 @@ if __name__ == "__main__":
         else:
             file_type = 'Creative'
     
-    github_xlsx_url = st.text_input("Enter GitHub Excel file URL", 
-                                    "https://raw.githubusercontent.com/gabrielllj/matchagency/master/agency_match.xlsx")
-    github_xlsx_url2 = st.text_input("Enter GitHub Excel file URL", 
-                                    "https://raw.githubusercontent.com/gabrielllj/r3automation/master/company_brand.xlsx")
+    # github_xlsx_url = st.text_input("Enter GitHub Excel file URL", 
+    #                                 "https://raw.githubusercontent.com/gabrielllj/matchagency/master/agency_match.xlsx")
+    # github_xlsx_url2 = st.text_input("Enter GitHub Excel file URL", 
+    #                                 "https://raw.githubusercontent.com/gabrielllj/r3automation/master/company_brand.xlsx")
+
+    if 'github_xlsx_url' not in st.session_state:
+    st.session_state.github_xlsx_url = "https://raw.githubusercontent.com/gabrielllj/matchagency/master/agency_match.xlsx"
+    if 'github_xlsx_url2' not in st.session_state:
+        st.session_state.github_xlsx_url2 = "https://raw.githubusercontent.com/gabrielllj/r3automation/master/company_brand.xlsx"
+    
+    # Use the values from session state directly, without displaying input fields
+    github_xlsx_url = st.session_state.github_xlsx_url
+    github_xlsx_url2 = st.session_state.github_xlsx_url2
+
+# # Optionally, you can display the URLs if needed
+# st.write("GitHub Excel URL 1:", github_xlsx_url)
+# st.write("GitHub Excel URL 2:", github_xlsx_url2)
     if uploaded_excel:
         data = pd.read_excel(uploaded_excel, sheet_name= file_type + ' Wins', header=7)
         excel_file = pd.ExcelFile(uploaded_excel2)
