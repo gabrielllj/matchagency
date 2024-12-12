@@ -284,7 +284,8 @@ if __name__ == "__main__":
             data['Status'] = 'Awarded'
             data['Market'] = data['Market'].astype(str)
             data['Remark'] = data['Remark'].astype(str)
-            data['Type of Assignment'] = np.where(data['Remark'].notna(), 'AOR/Project - ' + data['Remark'], 'AOR/Project')
+            data['Type of Assignment'] = np.where(data['Remark'].isna(), 'AOR/Project',
+                                                    'AOR/Project - ' + data['Remark'])
             data['Current Agency Description'] = data['Agency']
             data['Incumbent Agency Description'] = data['Incumbent']
             
